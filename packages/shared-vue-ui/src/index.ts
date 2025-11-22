@@ -1,0 +1,1 @@
+export { default as DynamicCommandForm } from './DynamicCommandForm.vue'

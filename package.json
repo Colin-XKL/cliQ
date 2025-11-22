@@ -1,0 +1,13 @@
+{
+  "name": "repo",
+  "private": true,
+  "packageManager": "pnpm@10.23.0",
+  "scripts": {
+    "nx": "nx"
+  },
+  "devDependencies": {
+    "@nx-go/nx-go": "^3.3.1",
+    "@nx/vue": "~21.0.4",
+    "nx": "~21.0.4"
+  }
+}

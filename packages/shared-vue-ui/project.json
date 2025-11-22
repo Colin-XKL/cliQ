@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.nx.dev/project-schema.json",
+  "name": "shared-vue-ui",
+  "sourceRoot": "packages/shared-vue-ui/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/shared-vue-ui",
+        "commands": ["echo build shared-vue-ui"]
+      }
+    }
+  }
+}

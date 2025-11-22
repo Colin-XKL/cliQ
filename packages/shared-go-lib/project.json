@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.nx.dev/project-schema.json",
+  "name": "shared-go-lib",
+  "sourceRoot": "packages/shared-go-lib",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/shared-go-lib",
+        "commands": ["go build ./..."]
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/shared-go-lib",
+        "commands": ["go test ./..."]
+      }
+    }
+  }
+}

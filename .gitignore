@@ -1,4 +1,15 @@
-cliq/cliq
+# common
 .idea
 .vscode
-cliq/frontend/package.json.md5
+node_modules
+.nx/
+
+# build dist
+cliq
+apps/cliq-app/cliq
+apps/cliq-frontend/dist/
+apps/cliq-hub-backend/server
+
+# miscellaneous
+apps/cliq-app/frontend/package.json.md5
+project-graph.html

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json.nx.dev/nx/schema.json",
+  "npmScope": "repo",
+  "affected": {
+    "defaultBase": "main"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.nx.dev/project-schema.json",
+  "name": "cliq-hub-backend",
+  "sourceRoot": "apps/cliq-hub-backend",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/cliq-hub-backend",
+        "commands": ["go build ./cmd/server"]
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/cliq-hub-backend",
+        "commands": ["go run ./cmd/server"],
+        "parallel": false
+      }
+    }
+  }
+}

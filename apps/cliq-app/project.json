@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json.nx.dev/project-schema.json",
+  "name": "cliq-app",
+  "sourceRoot": "apps/cliq-app",
+  "projectType": "application",
+  "targets": {
+    "frontend-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/cliq-app/frontend",
+        "commands": ["pnpm build"]
+      }
+    },
+    "wails-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/cliq-app",
+        "commands": ["wails build"]
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["frontend-build"],
+      "options": {
+        "cwd": "apps/cliq-app",
+        "commands": ["wails build"]
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "apps/cliq-app",
+        "commands": ["wails dev"],
+        "parallel": false
+      }
+    }
+  }
+}
