@@ -66,4 +66,4 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build frontend
-        run: pnpm nx run cliq-frontend:build
+        run: pnpm nx run cliq-hub-frontend:build
