@@ -1,0 +1,41 @@
+# 模板元信息
+name: PNGQuant 压缩工具
+description: 使用 pngquant 高效压缩 PNG 图片
+version: "1.0" # 标识当前 template 的版本
+author: user123
+cliq_template_version: "1.0" # 标识spec version. cliq 会根据这个版本号来解析模板.
+
+cmds:
+  - name: 压缩
+    description: 压缩 PNG 文件
+    # 实际执行使用的命令模板, 使用golang的template
+    command: "pngquant {{input_file}} --output {{output_file}}"
+
+    # 变量定义（关键部分） - 现在使用扁平化结构以保持顺序
+    variables:
+      - name: input_file
+        type: file_input # 前端页面会根据type来选择不同的组件
+        label: 输入文件
+        description: 选择要压缩的 PNG 文件
+        required: true
+        # 将组件相关的非公共选项放在options下
+        options:
+          file_types: [".png"]
+
+      - name: output_file
+        type: file_output
+        label: 输出文件
+        description: 选择压缩后保存的位置
+        required: true
+        options:
+          file_types: [".png"]
+          default: "{{input_file}}_compressed.png"  # 支持变量插值
+
+      # - name: skip-if-larger
+      #   type: boolean # boolean 的模式的话, 如果为true, 则带上参数. 如果为false, 则不带上参数.
+      #   arg_name: skip-if-larger # 如果定义了argname,则使用该值. 否则使用上面的key
+      #   label: 跳过未更改文件
+      #   description: 如果输出文件已存在且未更改，跳过写入
+      #   required: false
+      #   options:
+      #     default: false
