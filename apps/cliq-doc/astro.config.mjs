@@ -13,7 +13,7 @@ export default defineConfig({
 					label: 'English',
 					lang: 'en',
 				},
-				'zh-cn': {
+				'zh-CN': {
 					label: '简体中文',
 					lang: 'zh-CN',
 				},
