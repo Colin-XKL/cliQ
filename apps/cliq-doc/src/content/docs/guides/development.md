@@ -14,7 +14,7 @@ description: Monorepo development environment setup and build guide
 - Applications
   - `apps/cliq-app`：Wails hybrid application（Go + Vue）
   - `apps/cliq-hub-backend`：Pure Go backend service
-  - `apps/cliq-frontend`：Pure Vue web frontend
+  - `apps/cliq-hub-frontend`：Pure Vue web frontend
 - Packages
   - `packages/shared-go-lib`：Go shared library（template definition/parsing/validation, YAML tools）
   - `packages/shared-vue-ui`：Shared Vue components（currently includes `DynamicCommandForm`）
