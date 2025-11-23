@@ -39,8 +39,8 @@ description: Monorepo development environment setup and build guide
 - Pure Go backend（`cliq-hub-backend`）
   - `pnpm nx run cliq-hub-backend:serve`
   - Equivalent：`go run ./apps/cliq-hub-backend/cmd/server`
-- Pure web frontend（`cliq-frontend`）
-  - `pnpm nx run cliq-frontend:serve`
+- Pure web frontend（`cliq-hub-frontend`）
+  - `pnpm nx run cliq-hub-frontend:serve`
 
 ## Project Building
 - Wails application（frontend + desktop build）
