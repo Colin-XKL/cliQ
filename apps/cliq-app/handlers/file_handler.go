@@ -1,19 +1,17 @@
 package handlers
 
 import (
-    "context"
-    "crypto/md5"
-    "fmt"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "strings"
+	"context"
+	"crypto/md5"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
-    "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-    "repo/shared-go-lib/models"
-
-    "gopkg.in/yaml.v3"
+	"repo/cliqfile"
 )
 
 // FileHandler handles file-related operations
@@ -124,7 +122,7 @@ func (fh *FileHandler) SaveYAMLToFile(yamlContent string) error {
 }
 
 // ExportTemplateToFile 将模板导出为文件
-func (fh *FileHandler) ExportTemplateToFile(template *models.TemplateFile, filePath string) error {
+func (fh *FileHandler) ExportTemplateToFile(template *cliqfile.TemplateFile, filePath string) error {
 	if template == nil {
 		return fmt.Errorf("模板不能为空")
 	}
@@ -134,13 +132,13 @@ func (fh *FileHandler) ExportTemplateToFile(template *models.TemplateFile, fileP
 	}
 
 	// 序列化模板为YAML
-	data, err := yaml.Marshal(template)
+	yamlStr, err := cliqfile.GenerateYAML(template)
 	if err != nil {
 		return fmt.Errorf("序列化模板失败: %w", err)
 	}
 
 	// 写入文件
-	err = os.WriteFile(filePath, data, 0644)
+	err = os.WriteFile(filePath, []byte(yamlStr), 0644)
 	if err != nil {
 		return fmt.Errorf("写入文件失败: %w", err)
 	}
@@ -161,7 +159,7 @@ func getCommandParts(cmdTemplateStr string, variables map[string]interface{}) ([
 }
 
 // ExecuteCommand executes a shell command with the given input and output file paths
-func (fh *FileHandler) ExecuteCommand(template *models.TemplateFile, commandID string, variables map[string]interface{}) (string, error) {
+func (fh *FileHandler) ExecuteCommand(template *cliqfile.TemplateFile, commandID string, variables map[string]interface{}) (string, error) {
 	if template == nil {
 		return "", fmt.Errorf("模板未加载")
 	}
@@ -169,7 +167,7 @@ func (fh *FileHandler) ExecuteCommand(template *models.TemplateFile, commandID s
 		variables = make(map[string]interface{})
 	}
 	// 根据 commandID 查找对应的命令
-	var selectedCommand models.Command
+	var selectedCommand cliqfile.Command
 	found := false
 	for _, cmd := range template.Cmds {
 		if cmd.ID == commandID {
@@ -207,14 +205,14 @@ func (fh *FileHandler) ExecuteCommand(template *models.TemplateFile, commandID s
 	return strings.TrimSpace(string(out)), nil
 }
 
-func (fh *FileHandler) GetCommandText(template *models.TemplateFile, commandID string, variables map[string]interface{}) (string, error) {
+func (fh *FileHandler) GetCommandText(template *cliqfile.TemplateFile, commandID string, variables map[string]interface{}) (string, error) {
 	if template == nil {
 		return "", fmt.Errorf("template is nil")
 	}
 	if variables == nil {
 		variables = make(map[string]interface{})
 	}
-	var selectedCommand models.Command
+	var selectedCommand cliqfile.Command
 	found := false
 	for _, cmd := range template.Cmds {
 		if cmd.ID == commandID {
@@ -319,7 +317,7 @@ func (fh *FileHandler) ensureFavTemplatesDirExists() (string, error) {
 }
 
 // SaveFavTemplate 保存收藏模板文件
-func (fh *FileHandler) SaveFavTemplate(template *models.TemplateFile) error {
+func (fh *FileHandler) SaveFavTemplate(template *cliqfile.TemplateFile) error {
 	if template == nil {
 		return fmt.Errorf("模板不能为空")
 	}
@@ -336,13 +334,13 @@ func (fh *FileHandler) SaveFavTemplate(template *models.TemplateFile) error {
 	filePath := filepath.Join(dirPath, fileName)
 
 	// 序列化模板为YAML
-	data, err := yaml.Marshal(template)
+	yamlStr, err := cliqfile.GenerateYAML(template)
 	if err != nil {
 		return fmt.Errorf("序列化模板失败: %w", err)
 	}
 
 	// 写入文件
-	err = os.WriteFile(filePath, data, 0644)
+	err = os.WriteFile(filePath, []byte(yamlStr), 0644)
 	if err != nil {
 		return fmt.Errorf("写入收藏模板文件失败: %w", err)
 	}
@@ -351,7 +349,7 @@ func (fh *FileHandler) SaveFavTemplate(template *models.TemplateFile) error {
 }
 
 // ListFavTemplates 列出所有收藏的模板文件
-func (fh *FileHandler) ListFavTemplates() ([]*models.TemplateFile, error) {
+func (fh *FileHandler) ListFavTemplates() ([]*cliqfile.TemplateFile, error) {
 	dirPath, err := fh.ensureFavTemplatesDirExists()
 	if err != nil {
 		return nil, err
@@ -362,7 +360,7 @@ func (fh *FileHandler) ListFavTemplates() ([]*models.TemplateFile, error) {
 		return nil, fmt.Errorf("读取收藏模板目录失败: %w", err)
 	}
 
-	var templates []*models.TemplateFile
+	var templates []*cliqfile.TemplateFile
 	for _, file := range files {
 		if !file.IsDir() && (strings.HasSuffix(file.Name(), ".cliqfile.yaml") || strings.HasSuffix(file.Name(), ".cliqfile.yml")) {
 			// 验证文件名是否是MD5哈希格式 (32位十六进制字符) + 后缀
@@ -386,13 +384,12 @@ func (fh *FileHandler) ListFavTemplates() ([]*models.TemplateFile, error) {
 					continue
 				}
 
-				var template models.TemplateFile
-				err = yaml.Unmarshal(data, &template)
+				template, err := cliqfile.Parse(data)
 				if err != nil {
 					fmt.Printf("解析文件 %s 失败: %v\n", filePath, err)
 					continue
 				}
-				templates = append(templates, &template)
+				templates = append(templates, template)
 			}
 		}
 	}
@@ -469,7 +466,7 @@ func (fh *FileHandler) DeleteFavTemplate(templateName string) error {
 }
 
 // GetFavTemplate 读取指定收藏模板文件内容
-func (fh *FileHandler) GetFavTemplate(templateName string) (*models.TemplateFile, error) {
+func (fh *FileHandler) GetFavTemplate(templateName string) (*cliqfile.TemplateFile, error) {
 	if templateName == "" {
 		return nil, fmt.Errorf("模板名称不能为空")
 	}
@@ -510,17 +507,16 @@ func (fh *FileHandler) GetFavTemplate(templateName string) (*models.TemplateFile
 		return nil, fmt.Errorf("读取的模板内容为空: %s", filePath)
 	}
 
-	var template models.TemplateFile
-	err = yaml.Unmarshal(data, &template)
+	template, err := cliqfile.Parse(data)
 	if err != nil {
 		return nil, fmt.Errorf("解析收藏模板文件失败 (路径: %s): %w", filePath, err)
 	}
 
-	return &template, nil
+	return template, nil
 }
 
 // UpdateFavTemplate 更新指定收藏模板文件内容
-func (fh *FileHandler) UpdateFavTemplate(oldTemplateName string, newTemplateName string, updatedTemplate *models.TemplateFile) error {
+func (fh *FileHandler) UpdateFavTemplate(oldTemplateName string, newTemplateName string, updatedTemplate *cliqfile.TemplateFile) error {
 	if oldTemplateName == "" {
 		return fmt.Errorf("原模板名称不能为空")
 	}
@@ -564,26 +560,26 @@ func (fh *FileHandler) UpdateFavTemplate(oldTemplateName string, newTemplateName
 		newFilePath := filepath.Join(dirPath, newFileName)
 
 		// 序列化更新后的模板为YAML
-		data, err := yaml.Marshal(updatedTemplate)
+		yamlStr, err := cliqfile.GenerateYAML(updatedTemplate)
 		if err != nil {
 			return fmt.Errorf("序列化更新模板失败: %w", err)
 		}
 
 		// 写入新文件
-		err = os.WriteFile(newFilePath, data, 0644)
+		err = os.WriteFile(newFilePath, []byte(yamlStr), 0644)
 		if err != nil {
 			return fmt.Errorf("写入新模板文件失败: %w", err)
 		}
 	} else {
 		// 名称未变更，直接更新原文件
 		// 序列化更新后的模板为YAML
-		data, err := yaml.Marshal(updatedTemplate)
+		yamlStr, err := cliqfile.GenerateYAML(updatedTemplate)
 		if err != nil {
 			return fmt.Errorf("序列化更新模板失败: %w", err)
 		}
 
 		// 写入文件
-		err = os.WriteFile(oldFilePath, data, 0644)
+		err = os.WriteFile(oldFilePath, []byte(yamlStr), 0644)
 		if err != nil {
 			return fmt.Errorf("写入收藏模板文件失败: %w", err)
 		}

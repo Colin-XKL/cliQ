@@ -2,30 +2,29 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"cliq/config"
 	"cliq/handlers"
-	"repo/shared-go-lib/models"
-	templ "repo/shared-go-lib/template"
+	"repo/cliqfile"
 )
 
 // App struct
 type App struct {
 	ctx             context.Context
-	template        *models.TemplateFile // 添加 template 字段
+	template        *cliqfile.TemplateFile
 	fileHandler     *handlers.FileHandler
-	templateService *templ.TemplateService
 	settingsService *config.SettingsService
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
 	return &App{
-		fileHandler:     handlers.NewFileHandler(),
-		templateService: templ.NewTemplateService(),
+		fileHandler: handlers.NewFileHandler(),
 	}
 }
 
@@ -78,27 +77,44 @@ func (a *App) GetCommandText(commandID string, variables map[string]interface{})
 }
 
 // ParseCommandToTemplate 将命令字符串解析为模板
-func (a *App) ParseCommandToTemplate(commandStr string) (*models.TemplateFile, error) {
-	return a.templateService.ParseCommandToTemplate(commandStr)
+func (a *App) ParseCommandToTemplate(commandStr string) (*cliqfile.TemplateFile, error) {
+	return cliqfile.GenerateFromCommand(commandStr)
 }
 
 // GenerateYAMLFromTemplate 将模板对象转换为YAML字符串
-func (a *App) GenerateYAMLFromTemplate(template *models.TemplateFile) (string, error) {
-	return a.templateService.GenerateYAMLFromTemplate(template)
+func (a *App) GenerateYAMLFromTemplate(template *cliqfile.TemplateFile) (string, error) {
+	return cliqfile.GenerateYAML(template)
 }
 
 // ValidateYAMLTemplate 验证YAML模板格式
 func (a *App) ValidateYAMLTemplate(yamlStr string) error {
-	return a.templateService.ValidateYAMLTemplate(yamlStr)
+	validationErrors, err := cliqfile.Validate([]byte(yamlStr))
+	if err != nil {
+		return err
+	}
+	if len(validationErrors) > 0 {
+		var errMsg strings.Builder
+		errMsg.WriteString("模板文件存在错误:\n")
+		for _, ve := range validationErrors {
+			errMsg.WriteString(fmt.Sprintf("- 行 %d, 字段 '%s': %s\n", ve.Line, ve.Field, ve.Message))
+		}
+		return errors.New(errMsg.String())
+	}
+	return nil
 }
 
 // ParseYAMLToTemplate 解析YAML字符串为模板对象
-func (a *App) ParseYAMLToTemplate(yamlStr string) (*models.TemplateFile, error) {
-	return a.templateService.ParseYAMLToTemplate(yamlStr)
+func (a *App) ParseYAMLToTemplate(yamlStr string) (*cliqfile.TemplateFile, error) {
+	// ParseYAMLToTemplate in frontend expects validation as well
+	err := a.ValidateYAMLTemplate(yamlStr)
+	if err != nil {
+		return nil, err
+	}
+	return cliqfile.Parse([]byte(yamlStr))
 }
 
 // ExportTemplateToFile 将模板导出为文件
-func (a *App) ExportTemplateToFile(template *models.TemplateFile, filePath string) error {
+func (a *App) ExportTemplateToFile(template *cliqfile.TemplateFile, filePath string) error {
 	return a.fileHandler.ExportTemplateToFile(template, filePath)
 }
 
@@ -108,12 +124,12 @@ func (a *App) SaveYAMLToFile(yamlContent string) error {
 }
 
 // SaveFavTemplate 将模板保存到收藏目录
-func (a *App) SaveFavTemplate(template *models.TemplateFile) error {
+func (a *App) SaveFavTemplate(template *cliqfile.TemplateFile) error {
 	return a.fileHandler.SaveFavTemplate(template)
 }
 
 // ListFavTemplates 列出所有收藏的模板文件
-func (a *App) ListFavTemplates() ([]*models.TemplateFile, error) {
+func (a *App) ListFavTemplates() ([]*cliqfile.TemplateFile, error) {
 	return a.fileHandler.ListFavTemplates()
 }
 
@@ -123,7 +139,7 @@ func (a *App) DeleteFavTemplate(templateName string) error {
 }
 
 // GetFavTemplate 读取指定收藏模板文件内容
-func (a *App) GetFavTemplate(templateName string) (*models.TemplateFile, error) {
+func (a *App) GetFavTemplate(templateName string) (*cliqfile.TemplateFile, error) {
 	template, err := a.fileHandler.GetFavTemplate(templateName)
 	if err != nil {
 		return nil, err
@@ -137,7 +153,7 @@ func (a *App) GetFavTemplate(templateName string) (*models.TemplateFile, error) 
 }
 
 // UpdateFavTemplate 更新指定收藏模板文件内容
-func (a *App) UpdateFavTemplate(oldTemplateName string, newTemplateName string, updatedTemplate *models.TemplateFile) error {
+func (a *App) UpdateFavTemplate(oldTemplateName string, newTemplateName string, updatedTemplate *cliqfile.TemplateFile) error {
 	return a.fileHandler.UpdateFavTemplate(oldTemplateName, newTemplateName, updatedTemplate)
 }
 
