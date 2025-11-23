@@ -7,7 +7,7 @@ node_modules
 # build dist
 cliq
 apps/cliq-app/cliq
-apps/cliq-frontend/dist/
+apps/cliq-hub-frontend/dist/
 apps/cliq-hub-backend/server
 
 # miscellaneous

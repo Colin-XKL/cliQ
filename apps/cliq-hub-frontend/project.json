@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.nx.dev/project-schema.json",
-  "name": "cliq-frontend",
+  "name": "cliq-hub-frontend",
   "sourceRoot": "apps/cliq-frontend",
   "projectType": "application",
   "targets": {
