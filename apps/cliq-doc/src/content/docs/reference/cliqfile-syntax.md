@@ -38,12 +38,12 @@ cmds:            # List of command definitions
 ### `name` (required)
 - **Type:** String
 - **Description:** A human-readable name for the template that appears in the UI
-- **Example:** `FFmpeg 视频处理工具`
+- **Example:** `FFmpeg Video Processing Tool`
 
 ### `description` (required)
 - **Type:** String
 - **Description:** A brief explanation of what the template does
-- **Example:** `使用 FFmpeg 进行视频格式转换、提取音频、压缩和调整分辨率等操作`
+- **Example:** `Perform video format conversion, audio extraction, compression, and resolution adjustment using FFmpeg`
 
 ### `version` (required)
 - **Type:** String
@@ -73,12 +73,12 @@ The `cmds` field is a list of command definitions. Each template can define mult
 #### `name` (required)
 - **Type:** String
 - **Description:** Name of the command that appears in the UI
-- **Example:** `格式转换`
+- **Example:** `Format Conversion`
 
 #### `description` (required)
 - **Type:** String
 - **Description:** Brief explanation of what this specific command does
-- **Example:** `将视频文件转换为其他格式`
+- **Example:** `Convert video files to other formats`
 
 #### `command` (required)
 - **Type:** String
@@ -111,12 +111,12 @@ Each variable in the `variables` list has the following fields:
 ### `label` (required)
 - **Type:** String
 - **Description:** The display label shown in the UI for this variable
-- **Example:** `输入文件`
+- **Example:** `Input File`
 
 ### `description` (required)
 - **Type:** String
 - **Description:** A longer description explaining the purpose of this variable
-- **Example:** `选择要转换的视频文件`
+- **Example:** `Select the video file to convert`
 
 ### `required` (required)
 - **Type:** Boolean
@@ -184,8 +184,8 @@ Default values can reference other variables using the `{{variable_name}}` synta
 ```yaml
 - name: output_file
   type: file_output
-  label: 输出文件
-  description: 选择转换后保存的位置和格式
+  label: Output File
+  description: Select the location and format to save after conversion
   required: true
   options:
     file_types: [".mp4", ".mkv", ".avi", ".mov", ".webm"]
@@ -198,13 +198,13 @@ A single template can define multiple related commands:
 
 ```yaml
 cmds:
-  - name: 格式转换
-    description: 将视频文件转换为其他格式
+  - name: Format Conversion
+    description: Convert video files to other formats
     command: "ffmpeg -i {{input_file}} -codec copy {{output_file}}"
     variables:
       # ... variable definitions
-  - name: 提取音频
-    description: 从视频文件中提取音频轨道
+  - name: Audio Extraction
+    description: Extract audio tracks from video files
     command: "ffmpeg -i {{input_file}} -vn {{output_file}}"
     variables:
       # ... variable definitions
@@ -240,29 +240,29 @@ Here's a complete example showing various variable types:
 
 ```yaml
 # Template metadata
-name: PNGQuant 压缩工具
-description: 使用 pngquant 高效压缩 PNG 图片
+name: PNGQuant Compression Tool
+description: Efficiently compress PNG images using pngquant
 version: "1.0"
 author: user123
 cliq_template_version: "1.0"
 
 cmds:
-  - name: 压缩
-    description: 压缩 PNG 文件
+  - name: Compress
+    description: Compress PNG file
     command: "pngquant {{input_file}} --output {{output_file}}"
     variables:
       - name: input_file
         type: file_input
-        label: 输入文件
-        description: 选择要压缩的 PNG 文件
+        label: Input File
+        description: Select the PNG file to compress
         required: true
         options:
           file_types: [".png"]
 
       - name: output_file
         type: file_output
-        label: 输出文件
-        description: 选择压缩后保存的位置
+        label: Output File
+        description: Select the location to save after compression
         required: true
         options:
           file_types: [".png"]
