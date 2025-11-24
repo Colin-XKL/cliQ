@@ -26,6 +26,10 @@ func Validate(data []byte) ([]ValidationError, error) {
 		return nil, fmt.Errorf("YAML syntax error: %w", err)
 	}
 
+	if node.Kind == 0 && len(node.Content) == 0 {
+		return []ValidationError{{Message: "Empty document"}}, nil
+	}
+
 	if node.Kind == yaml.DocumentNode {
 		if len(node.Content) == 0 {
 			return []ValidationError{{Message: "Empty document"}}, nil
