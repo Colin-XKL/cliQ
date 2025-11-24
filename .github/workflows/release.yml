@@ -36,6 +36,19 @@ jobs:
           version: 10
           run_install: false
 
+      - name: Get pnpm store directory (non-Windows)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Get pnpm store directory (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $storePath = pnpm store path --silent
+          "STORE_PATH=$storePath" >> $env:GITHUB_ENV
+
       - name: Get pnpm store directory
         shell: bash
         run: |
