@@ -11,6 +11,8 @@
         <Column field="version" header="版本"></Column>
         <Column header="操作">
           <template #body="slotProps">
+            <Button icon="pi pi-play" size="small" @click="selectAndLoadTemplate(slotProps.data)" rounded
+              variant="outlined" class="mr-2" />
             <Button icon="pi pi-pencil" size="small" @click="editTemplate(slotProps.data)" rounded variant="outlined" />
             <Button icon="pi pi-trash" size="small" @click="confirmDeleteTemplate(slotProps.data)" rounded
               variant="outlined" />
@@ -47,6 +49,8 @@ import Dialog from 'primevue/dialog';
 import { useToastNotifications } from '@/composables/useToastNotifications';
 import TemplateEditorModal from '@/components/TemplateEditorModal.vue';
 
+const emit = defineEmits(['template-selected']);
+
 const favTemplates = ref<models.TemplateFile[]>([]);
 const displayConfirmation = ref(false);
 const templateToDelete = ref<models.TemplateFile | null>(null);
@@ -63,6 +67,19 @@ const loadFavTemplates = async () => {
   } catch (error) {
     console.error('Failed to list favorite templates:', error);
     showToast('错误', `加载收藏模板失败: ${error}`, 'error');
+  }
+};
+
+const selectAndLoadTemplate = async (template: models.TemplateFile) => {
+  try {
+    const fullTemplate = await GetFavTemplate(template.name);
+    if (fullTemplate) {
+      emit('template-selected', fullTemplate);
+      showToast('成功', `已选择模板 ${template.name}`, 'success');
+    }
+  } catch (error) {
+    console.error('Failed to load template:', error);
+    showToast('错误', `加载模板失败: ${error}`, 'error');
   }
 };
 

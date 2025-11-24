@@ -49,6 +49,15 @@ const loadFavTemplates = async () => {
 onMounted(() => {
   loadFavTemplates();
 });
+
+const onTemplateSelectedFromManagement = (template: models.TemplateFile) => {
+  resetTemplate();
+  templateData.value = template;
+  if (template.cmds && template.cmds.length > 0) {
+    selectedCommand.value = template.cmds[0];
+  }
+  currentView.value = 'main';
+};
 </script>
 
 <template>
@@ -102,7 +111,7 @@ onMounted(() => {
 
           <!-- Template Management View -->
           <div v-if="currentView === 'template-management'">
-            <TemplateManagementPage />
+            <TemplateManagementPage @template-selected="onTemplateSelectedFromManagement" />
           </div>
 
           <!-- About View -->
