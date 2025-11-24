@@ -46,8 +46,8 @@ jobs:
       - name: Build backend
         run: go build ./apps/cliq-hub-backend/cmd/server
 
-      - name: Test shared-go-lib
-        run: go test ./packages/shared-go-lib/...
+      - name: Test cliqfile
+        run: go test ./packages/cliqfile/...
 
   cliq_frontend:
     runs-on: ubuntu-22.04

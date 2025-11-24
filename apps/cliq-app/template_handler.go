@@ -6,16 +6,15 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"gopkg.in/yaml.v3"
 
-	"repo/shared-go-lib/models"
-	templ "repo/shared-go-lib/template"
+	"repo/cliqfile"
 )
 
 // ImportTemplate 导入模板文件
-func (a *App) ImportTemplate() (*models.TemplateFile, error) {
+func (a *App) ImportTemplate() (*cliqfile.TemplateFile, error) {
 	// 打开文件选择对话框
 	filePath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "选择模板文件",
@@ -49,7 +48,7 @@ func (a *App) ImportTemplate() (*models.TemplateFile, error) {
 }
 
 // ImportTemplateFromURL 从URL导入模板文件
-func (a *App) ImportTemplateFromURL(url string) (*models.TemplateFile, error) {
+func (a *App) ImportTemplateFromURL(url string) (*cliqfile.TemplateFile, error) {
 	// 从URL下载内容
 	resp, err := http.Get(url)
 	if err != nil {
@@ -87,7 +86,7 @@ func (a *App) ImportTemplateFromURL(url string) (*models.TemplateFile, error) {
 }
 
 // parseAndValidateTemplateFromFile 解析并验证文件中的模板
-func (a *App) parseAndValidateTemplateFromFile(filePath string) (*models.TemplateFile, error) {
+func (a *App) parseAndValidateTemplateFromFile(filePath string) (*cliqfile.TemplateFile, error) {
 	// 读取文件内容
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -98,25 +97,32 @@ func (a *App) parseAndValidateTemplateFromFile(filePath string) (*models.Templat
 }
 
 // parseAndValidateTemplateFromData 解析并验证数据中的模板
-func (a *App) parseAndValidateTemplateFromData(data []byte) (*models.TemplateFile, error) {
+func (a *App) parseAndValidateTemplateFromData(data []byte) (*cliqfile.TemplateFile, error) {
+	// 验证模板
+	validationErrors, err := cliqfile.Validate(data)
+	if err != nil {
+		return nil, fmt.Errorf("模板验证过程出错: %w", err)
+	}
+
+	if len(validationErrors) > 0 {
+		var errMsg strings.Builder
+		errMsg.WriteString("模板文件存在错误:\n")
+		for _, ve := range validationErrors {
+			errMsg.WriteString(fmt.Sprintf("- 行 %d, 字段 '%s': %s\n", ve.Line, ve.Field, ve.Message))
+		}
+		return nil, errors.New(errMsg.String())
+	}
+
 	// 解析YAML
-	var template models.TemplateFile
-	err := yaml.Unmarshal(data, &template)
+	template, err := cliqfile.Parse(data)
 	if err != nil {
 		return nil, fmt.Errorf("解析YAML失败: %w", err)
 	}
 
-	// 使用服务进行验证（包括变量名唯一性等）
-	service := templ.NewTemplateService()
-	yamlStr := string(data)
-	if err := service.ValidateYAMLTemplate(yamlStr); err != nil {
-		return nil, err
-	}
-
-	return &template, nil
+	return template, nil
 }
 
 // setTemplate 设置应用的当前模板
-func (a *App) setTemplate(template *models.TemplateFile) {
+func (a *App) setTemplate(template *cliqfile.TemplateFile) {
 	a.template = template
 }

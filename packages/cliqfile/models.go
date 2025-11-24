@@ -1,4 +1,4 @@
-package models
+package cliqfile
 
 // TemplateFile 表示一个完整的模板文件
 type TemplateFile struct {
@@ -15,11 +15,11 @@ type TemplateFile struct {
 
 // Command 表示一个命令模板
 type Command struct {
-	ID          string               `yaml:"id" json:"id"` // 添加 ID 字段
+	ID          string               `yaml:"id" json:"id"`
 	Name        string               `yaml:"name" json:"name"`
 	Description string               `yaml:"description" json:"description"`
 	Command     string               `yaml:"command" json:"command"`
-	Variables   []VariableDefinition `yaml:"variables" json:"variables"` // Changed from map to array
+	Variables   []VariableDefinition `yaml:"variables,omitempty" json:"variables,omitempty"`
 }
 
 // VariableDefinition 表示命令中的一个变量定义（扁平化结构）

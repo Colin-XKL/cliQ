@@ -1,17 +1,17 @@
 package handlers
 
 import (
-    "log"
-    "net/http"
-    "strings"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 
-    "cliq-hub-backend/internal/errors"
-    "cliq-hub-backend/internal/llm"
-    "cliq-hub-backend/internal/version"
-    yamlcodec "repo/shared-go-lib/yaml"
-    validation "repo/shared-go-lib/template"
+	"cliq-hub-backend/internal/errors"
+	"cliq-hub-backend/internal/llm"
+	"cliq-hub-backend/internal/version"
+	"repo/cliqfile"
 )
 
 type GenerateHandler struct {
@@ -67,8 +67,8 @@ func (h *GenerateHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	raw := yamlcodec.StripFences(content)
-	t, err := yamlcodec.UnmarshalTemplate(raw)
+	raw := cliqfile.StripFences(content)
+	t, err := cliqfile.Parse([]byte(raw))
 	if err != nil {
 		errResp := errors.New("llm_output_invalid", "failed to parse YAML from LLM")
 		if h.debugMode {
@@ -95,21 +95,33 @@ func (h *GenerateHandler) Handle(c *gin.Context) {
 		t.Description = req.Description
 	}
 
-	if err := validation.ValidateTemplate(t); err != nil {
-		if h.debugMode {
-			log.Printf("Validation Error: %v", err)
+	// Re-marshal to validate logic on the final object
+	out, err := cliqfile.GenerateYAML(t)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, errors.New("marshal_error", err.Error()))
+		return
+	}
+
+	if validationErrors, err := cliqfile.Validate([]byte(out)); err != nil || len(validationErrors) > 0 {
+		var errMsg string
+		if err != nil {
+			errMsg = err.Error()
+		} else {
+			var msgBuilder strings.Builder
+			for _, ve := range validationErrors {
+				msgBuilder.WriteString(fmt.Sprintf("%s: %s; ", ve.Field, ve.Message))
+			}
+			errMsg = msgBuilder.String()
 		}
-		errResp := errors.New("validation_error", err.Error())
+
+		if h.debugMode {
+			log.Printf("Validation Error: %s", errMsg)
+		}
+		errResp := errors.New("validation_error", errMsg)
 		if h.debugMode {
 			errResp = errResp.WithMeta("llm_request", req).WithMeta("llm_output", content)
 		}
 		c.JSON(http.StatusUnprocessableEntity, errResp)
-		return
-	}
-
-	out, err := yamlcodec.MarshalTemplate(t)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, errors.New("marshal_error", err.Error()))
 		return
 	}
 
@@ -123,7 +135,7 @@ func (h *GenerateHandler) Handle(c *gin.Context) {
 		},
 	}
 	if enc == "base64" {
-		resp.YAML = yamlcodec.Base64Encode(out)
+		resp.YAML = cliqfile.Base64Encode(out)
 	}
 	c.JSON(http.StatusOK, resp)
 }
