@@ -52,12 +52,58 @@ func (h *GenerateHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	content, err := h.client.GenerateCliqfileFromPrompt(c.Request.Context(), llm.GenerateRequest{
+	applyDefaults := func(t *cliqfile.TemplateFile) {
+		if t.Version == "" {
+			t.Version = version.TemplateVersion
+		}
+		if t.CliqTemplateVersion == "" {
+			t.CliqTemplateVersion = version.CliqTemplateSpecVersion
+		}
+		if t.Author == "" && req.Author != "" {
+			t.Author = req.Author
+		}
+		if t.Name == "" && req.Name != "" {
+			t.Name = req.Name
+		}
+		if t.Description == "" && req.Description != "" {
+			t.Description = req.Description
+		}
+	}
+
+	validator := func(content string) error {
+		raw := cliqfile.StripFences(content)
+		t, err := cliqfile.Parse([]byte(raw))
+		if err != nil {
+			return fmt.Errorf("YAML parse error: %w", err)
+		}
+
+		applyDefaults(t)
+
+		out, err := cliqfile.GenerateYAML(t)
+		if err != nil {
+			return err
+		}
+
+		if validationErrors, err := cliqfile.Validate([]byte(out)); err != nil || len(validationErrors) > 0 {
+			if err != nil {
+				return err
+			}
+			var msgBuilder strings.Builder
+			for _, ve := range validationErrors {
+				msgBuilder.WriteString(fmt.Sprintf("%s: %s; ", ve.Field, ve.Message))
+			}
+			return fmt.Errorf("validation error: %s", msgBuilder.String())
+		}
+		return nil
+	}
+
+	content, err := h.client.GenerateCliqfileWithRetry(c.Request.Context(), llm.GenerateRequest{
 		CommandExample: req.CommandExample,
 		Name:           req.Name,
 		Description:    req.Description,
 		Author:         req.Author,
-	})
+	}, 3, validator)
+
 	if err != nil {
 		errResp := errors.New("llm_error", err.Error())
 		if h.debugMode {
@@ -78,22 +124,7 @@ func (h *GenerateHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// ensure defaults present if LLM omitted
-	if t.Version == "" {
-		t.Version = version.TemplateVersion
-	}
-	if t.CliqTemplateVersion == "" {
-		t.CliqTemplateVersion = version.CliqTemplateSpecVersion
-	}
-	if t.Author == "" && req.Author != "" {
-		t.Author = req.Author
-	}
-	if t.Name == "" && req.Name != "" {
-		t.Name = req.Name
-	}
-	if t.Description == "" && req.Description != "" {
-		t.Description = req.Description
-	}
+	applyDefaults(t)
 
 	// Re-marshal to validate logic on the final object
 	out, err := cliqfile.GenerateYAML(t)
