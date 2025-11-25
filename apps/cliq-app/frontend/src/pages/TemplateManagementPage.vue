@@ -76,6 +76,8 @@ const selectAndLoadTemplate = async (template: models.TemplateFile) => {
     if (fullTemplate) {
       emit('template-selected', fullTemplate);
       showToast('成功', `已选择模板 ${template.name}`, 'success');
+    } else {
+      showToast('错误', `无法加载模板 ${template.name}`, 'error');
     }
   } catch (error) {
     console.error('Failed to load template:', error);
