@@ -31,7 +31,7 @@ author: {{.Author}}
 var cliqfileSyntaxDoc string
 
 type Client interface {
-	GenerateCliqfileFromPrompt(ctx context.Context, req GenerateRequest) (string, error)
+	GenerateCliqfileWithRetry(ctx context.Context, req GenerateRequest, maxRounds int, validator func(string) error) (string, error)
 }
 
 type client struct {
@@ -55,7 +55,7 @@ func NewClient(cfg *config.Config) (Client, error) {
 	return &client{oa: c, model: cfg.LLMModel}, nil
 }
 
-func (c *client) GenerateCliqfileFromPrompt(ctx context.Context, req GenerateRequest) (string, error) {
+func (c *client) GenerateCliqfileWithRetry(ctx context.Context, req GenerateRequest, maxRounds int, validator func(string) error) (string, error) {
 	// Define the system prompt that includes the CLIQ file syntax documentation
 	systemPrompt := fmt.Sprintf("You generate ONLY valid cliqfile YAML per schema. No prose. No markdown fences.\n\nCLIQFILE SYNTAX DOCUMENTATION:\n%s", cliqfileSyntaxDoc)
 
@@ -64,29 +64,63 @@ func (c *client) GenerateCliqfileFromPrompt(ctx context.Context, req GenerateReq
 	if err != nil {
 		return "", fmt.Errorf("failed to parse user prompt template: %w", err)
 	}
-	
+
 	var userPromptBuilder strings.Builder
 	if err := tmpl.Execute(&userPromptBuilder, req); err != nil {
 		return "", fmt.Errorf("failed to execute user prompt template: %w", err)
 	}
 	userPrompt := userPromptBuilder.String()
 
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-	defer cancel()
+	messages := []openai.ChatCompletionMessage{
+		{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
+		{Role: openai.ChatMessageRoleUser, Content: userPrompt},
+	}
 
-	resp, err := c.oa.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: c.model,
-		Messages: []openai.ChatCompletionMessage{
-			{Role: openai.ChatMessageRoleSystem, Content: systemPrompt},
-			{Role: openai.ChatMessageRoleUser, Content: userPrompt},
-		},
-		Temperature: 0,
-	})
-	if err != nil {
-		return "", err
+	var lastContent string
+
+	if maxRounds < 1 {
+		maxRounds = 1
 	}
-	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("empty LLM response")
+
+	for i := 0; i < maxRounds; i++ {
+		// Use a per-request timeout
+		reqCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+		resp, err := c.oa.CreateChatCompletion(reqCtx, openai.ChatCompletionRequest{
+			Model:       c.model,
+			Messages:    messages,
+			Temperature: 0,
+		})
+		cancel()
+
+		if err != nil {
+			return "", err
+		}
+		if len(resp.Choices) == 0 {
+			return "", fmt.Errorf("empty LLM response")
+		}
+		content := resp.Choices[0].Message.Content
+		lastContent = content
+
+		// Validate
+		if validator != nil {
+			if err := validator(content); err != nil {
+				// Prepare for next round
+				messages = append(messages, openai.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleAssistant,
+					Content: content,
+				})
+				messages = append(messages, openai.ChatCompletionMessage{
+					Role:    openai.ChatMessageRoleUser,
+					Content: fmt.Sprintf("The previous output was invalid. Error: %s. Please fix it and return the complete valid YAML.", err.Error()),
+				})
+				continue
+			}
+		}
+
+		return content, nil
 	}
-	return resp.Choices[0].Message.Content, nil
+
+	// If we reached here, we ran out of rounds
+	// We return the last content anyway, so the caller can validate it and report specific errors.
+	return lastContent, nil
 }
