@@ -45,6 +45,286 @@ cmds: []
 	}
 }
 
+func TestValidateRoot(t *testing.T) {
+	tests := []struct {
+		name          string
+		yaml          string
+		expectedError string
+	}{
+		{
+			name: "Empty document",
+			yaml: "",
+			expectedError: "Empty document",
+		},
+		{
+			name: "Root not a mapping",
+			yaml: "- item1",
+			expectedError: "Root must be a mapping (object)",
+		},
+		{
+			name: "Missing required fields",
+			yaml: `
+cmds:
+  - name: cmd1
+    description: desc1
+    command: echo hello
+`,
+			expectedError: "Missing required field", // Will match multiple errors
+		},
+		{
+			name: "Empty required field",
+			yaml: `
+name: ""
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+    description: desc1
+    command: echo hello
+`,
+			expectedError: "Field cannot be empty",
+		},
+		{
+			name: "Cmds not a list",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds: "not a list"
+`,
+			expectedError: "cmds must be a list",
+		},
+		{
+			name: "Cmds list empty",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds: []
+`,
+			expectedError: "cmds list cannot be empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errors, err := Validate([]byte(tt.yaml))
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			found := false
+			for _, e := range errors {
+				if e.Message == tt.expectedError {
+					found = true
+					break
+				}
+				// For "Missing required field", it might be multiple, just check if any matches
+				if tt.expectedError == "Missing required field" && e.Message == "Missing required field" {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("Expected error containing '%s', got %v", tt.expectedError, errors)
+			}
+		})
+	}
+}
+
+func TestValidateCommand(t *testing.T) {
+	tests := []struct {
+		name          string
+		yaml          string
+		expectedError string
+	}{
+		{
+			name: "Command not an object",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - "not an object"
+`,
+			expectedError: "Command must be an object",
+		},
+		{
+			name: "Missing command fields",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+`,
+			expectedError: "Missing required field in command",
+		},
+		{
+			name: "Empty command field",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+    description: desc1
+    command: ""
+`,
+			expectedError: "Field cannot be empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errors, err := Validate([]byte(tt.yaml))
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			found := false
+			for _, e := range errors {
+				if e.Message == tt.expectedError {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("Expected error containing '%s', got %v", tt.expectedError, errors)
+			}
+		})
+	}
+}
+
+func TestValidateVariables(t *testing.T) {
+	tests := []struct {
+		name          string
+		yaml          string
+		expectedError string
+	}{
+		{
+			name: "Variables not a list",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+    description: desc1
+    command: echo hello
+    variables: "not a list"
+`,
+			expectedError: "variables must be a list",
+		},
+		{
+			name: "Variable not an object",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+    description: desc1
+    command: echo hello
+    variables:
+      - "not an object"
+`,
+			expectedError: "Variable must be an object",
+		},
+		{
+			name: "Missing variable fields",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+    description: desc1
+    command: echo {{var1}}
+    variables:
+      - name: var1
+`,
+			expectedError: "Missing required field in variable",
+		},
+		{
+			name: "Invalid variable type",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+    description: desc1
+    command: echo {{var1}}
+    variables:
+      - name: var1
+        type: invalid_type
+        label: Var 1
+`,
+			expectedError: "Invalid type 'invalid_type'",
+		},
+		{
+			name: "Duplicate variable name",
+			yaml: `
+name: My Template
+description: A description
+version: 1.0
+author: Me
+cliq_template_version: 1.0
+cmds:
+  - name: cmd1
+    description: desc1
+    command: echo {{var1}}
+    variables:
+      - name: var1
+        type: string
+        label: Var 1
+      - name: var1
+        type: number
+        label: Var 1 Duplicate
+`,
+			expectedError: "Duplicate variable name 'var1'",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errors, err := Validate([]byte(tt.yaml))
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			found := false
+			for _, e := range errors {
+				if e.Message == tt.expectedError {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("Expected error containing '%s', got %v", tt.expectedError, errors)
+			}
+		})
+	}
+}
+
 func TestValidateVariableUsage(t *testing.T) {
     yamlStr := `
 name: Test
@@ -69,10 +349,10 @@ cmds:
     foundUndefined := false
 
     for _, e := range errors {
-        if e.Field == "command" {
+        if e.Field == "command" && e.Message == "Variable 'unused_var' used in command string but not defined in variables" {
             foundUndefined = true
         }
-        if e.Field == "variables" {
+        if e.Field == "variables" && e.Message == "Variable 'defined_var' defined but not used in command string" {
             foundUnused = true
         }
     }
