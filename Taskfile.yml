@@ -2,6 +2,11 @@
 
 version: '3'
 
+vars:
+  JQ_CLI: jq
+  GIT_CLI: git
+  SEMVER_CLI: semver
+
 tasks:
   dev:
     cmds:
@@ -21,3 +26,48 @@ tasks:
     cmds:
       - rm -rf cliq/frontend/dist
       - rm -rf cliq/build/bin
+
+  release:
+    desc: "Create a new release by bumping the version, updating files, and creating a git tag."
+    preconditions:
+      - sh: "command -v {{.SEMVER_CLI}}"
+        msg: "semver is not installed. Please install it first."
+      - sh: "command -v {{.JQ_CLI}}"
+        msg: "jq is not installed. Please install it first."
+    prompts:
+      - name: "BUMP"
+        message: "What type of version bump is this? (major, minor, patch)"
+        choices:
+          - patch
+          - minor
+          - major
+        default: "patch"
+    cmds:
+      - |
+        set -e
+        LATEST_TAG=$({{ .GIT_CLI }} describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        LATEST_VERSION=${LATEST_TAG#v}
+        NEW_VERSION=$({{ .SEMVER_CLI }} -i {{.BUMP}} $LATEST_VERSION)
+        echo "Bumping version from $LATEST_VERSION to $NEW_VERSION"
+
+        # Update wails.json
+        WAILS_JSON="apps/cliq-app/wails.json"
+        echo "Updating $WAILS_JSON"
+        {{ .JQ_CLI }} --arg new_version "$NEW_VERSION" '.info.productVersion = $new_version' "$WAILS_JSON" > tmp.$$.json && mv tmp.$$.json "$WAILS_JSON"
+
+        # Update package.json files
+        PKG_JSON_FILES=$(find apps packages -name "package.json")
+        for PKG_JSON in $PKG_JSON_FILES; do
+          echo "Updating $PKG_JSON"
+          {{ .JQ_CLI }} --arg new_version "$NEW_VERSION" '.version = $new_version' "$PKG_JSON" > "tmp.$$.json" && mv "tmp.$$.json" "$PKG_JSON"
+        done
+
+        echo "Committing version updates..."
+        {{ .GIT_CLI }} add $WAILS_JSON $PKG_JSON_FILES
+        {{ .GIT_CLI }} commit -m "chore(release): v$NEW_VERSION"
+
+        echo "Creating new git tag v$NEW_VERSION"
+        {{ .GIT_CLI }} tag "v$NEW_VERSION"
+
+        echo "Successfully updated versions and created git tag v$NEW_VERSION"
+        echo "Run 'git push --follow-tags' to push the changes and the new tag."
