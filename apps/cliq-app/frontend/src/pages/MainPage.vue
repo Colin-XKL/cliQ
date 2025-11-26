@@ -170,6 +170,7 @@ const importTemplate = async () => {
         selectedCommandInternal.value = result.cmds[0];
       }
       showToast('成功', '模板导入成功', 'success');
+      emit('fav-template-updated');
     }
   } catch (error) {
     showToast('错误', `导入模板失败: ${error}`, 'error');
@@ -193,6 +194,7 @@ const importTemplateFromUrl = async () => {
         selectedCommandInternal.value = result.cmds[0];
       }
       showToast('成功', '模板导入成功', 'success');
+      emit('fav-template-updated');
       cancelUrlImport(); // Close the dialog
     }
   } catch (error) {
