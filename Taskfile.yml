@@ -45,7 +45,8 @@ tasks:
     cmds:
       - |
         set -e
-        LATEST_TAG=$({{ .GIT_CLI }} describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        LATEST_TAG=$({{ .GIT_CLI }} tag -l 'v*' --sort='v:refname' | tail -n 1)
+        : ${LATEST_TAG:=v0.0.0}
         LATEST_VERSION=${LATEST_TAG#v}
         NEW_VERSION=$({{ .SEMVER_CLI }} -i {{.BUMP}} $LATEST_VERSION)
         echo "Bumping version from $LATEST_VERSION to $NEW_VERSION"
