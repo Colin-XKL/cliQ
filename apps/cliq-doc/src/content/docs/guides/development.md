@@ -1,68 +1,68 @@
 ---
-title: Development Environment and Build Guide
-description: Monorepo development environment setup and build guide
+title: 开发环境与构建指南
+description: Monorepo 开发环境搭建与构建指南
 ---
 
-## Dependencies
+## 依赖环境
 - Node：`>=22`
 - pnpm：`10`
 - Go：`1.24`
-- Nx：`19.8.3`（local）
-- Wails CLI（for `cliq-app`）：`go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+- Nx：`19.8.3`（本地）
+- Wails CLI（用于 `cliq-app`）：`go install github.com/wailsapp/wails/v2/cmd/wails@latest`
 
-## Workspace Structure
-- Applications
-  - `apps/cliq-app`：Wails hybrid application（Go + Vue）
-  - `apps/cliq-hub-backend`：Pure Go backend service
-  - `apps/cliq-hub-frontend`：Pure Vue web frontend
-- Packages
-  - `packages/shared-go-lib`：Go shared library（template definition/parsing/validation, YAML tools）
-  - `packages/shared-vue-ui`：Shared Vue components（currently includes `DynamicCommandForm`）
-- Root files
+## 工作区结构
+- 应用
+  - `apps/cliq-app`：Wails 混合应用（Go + Vue）
+  - `apps/cliq-hub-backend`：纯 Go 后端服务
+  - `apps/cliq-frontend`：纯 Vue Web 前端
+- 包
+  - `packages/shared-go-lib`：Go 共享库（模板定义/解析/校验、YAML 工具）
+  - `packages/shared-vue-ui`：共享 Vue 组件（目前包含 `DynamicCommandForm`）
+- 根文件
   - `pnpm-workspace.yaml`、`package.json`、`nx.json`、`go.work`
 
-## Initialization and Installation
-- Install dependencies
+## 初始化与安装
+- 安装依赖
   - `pnpm install`
-- Verify Nx availability
+- 验证 Nx 可用
   - `pnpm nx --version`
   - `pnpm nx graph --file=project-graph.html`
-- Install Wails CLI（for `cliq-app` development/build）
+- 安装 Wails CLI（用于 `cliq-app` 开发/构建）
   - `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
-- Go workspace（`go.work` already configured with local module binding）
-  - View bindings：`go work edit -print`
+- Go 工作区（`go.work` 已配置本地模块绑定）
+  - 查看绑定：`go work edit -print`
 
-## Starting Development Servers
-- Wails application（`cliq-app`）
+## 启动开发服务器
+- Wails 应用（`cliq-app`）
   - `pnpm nx run cliq-app:serve`
-  - Note：calls `wails dev`，frontend behavior driven by `apps/cliq-app/wails.json`
-- Pure Go backend（`cliq-hub-backend`）
+  - 说明：调用 `wails dev`，前端行为由 `apps/cliq-app/wails.json` 驱动
+- 纯 Go 后端（`cliq-hub-backend`）
   - `pnpm nx run cliq-hub-backend:serve`
-  - Equivalent：`go run ./apps/cliq-hub-backend/cmd/server`
-- Pure web frontend（`cliq-hub-frontend`）
-  - `pnpm nx run cliq-hub-frontend:serve`
+  - 等价：`go run ./apps/cliq-hub-backend/cmd/server`
+- 纯 Web 前端（`cliq-frontend`）
+  - `pnpm nx run cliq-frontend:serve`
 
-## Project Building
-- Wails application（frontend + desktop build）
+## 项目构建
+- Wails 应用（前端 + 桌面构建）
   - `pnpm nx run cliq-app:build`
-  - Note：first execute `frontend-build`（Vite build），then execute `wails build`
-- Pure Go backend
+  - 说明：先执行 `frontend-build`（Vite 构建），再执行 `wails build`
+- 纯 Go 后端
   - `pnpm nx run cliq-hub-backend:build`
-  - Equivalent：`go build ./apps/cliq-hub-backend/cmd/server`
-- Pure web frontend
+  - 等价：`go build ./apps/cliq-hub-backend/cmd/server`
+- 纯 Web 前端
   - `pnpm nx run cliq-frontend:build`
 
-## Testing and Validation
-- Go shared library tests
+## 测试与校验
+- Go 共享库测试
   - `pnpm nx run shared-go-lib:test`
-  - Equivalent：`go test ./packages/shared-go-lib/...`
+  - 等价：`go test ./packages/shared-go-lib/...`
 
-## Common Issues
+## 常见问题
 - `nx: command not found`
-  - Run `pnpm install` to install workspace dependencies；verify with `pnpm nx --version`。
-- `@nx-go/nx-go` version resolution failure
-  - Use verified version：`3.3.1`（root `package.json` already configured）。
-- Wails build failure
-  - Confirm Wails CLI and system dependencies are installed locally；run `wails doctor` locally for troubleshooting。
-- Shared UI import failure
-  - Alias for `@repo/shared-vue-ui` already configured in `apps/cliq-app/frontend/vite.config.ts`；ensure `packages/shared-vue-ui/src` exists and exports components。
+  - 运行 `pnpm install` 安装工作区依赖；通过 `pnpm nx --version` 验证。
+- `@nx-go/nx-go` 版本解析失败
+  - 使用已验证版本：`3.3.1`（根 `package.json` 已配置）。
+- Wails 构建失败
+  - 确认本机已安装 Wails CLI 与系统依赖；可先在本地运行 `wails doctor` 排查。
+- 共享 UI 导入失败
+  - 已在 `apps/cliq-app/frontend/vite.config.ts` 配置 `@repo/shared-vue-ui` 的别名；确保 `packages/shared-vue-ui/src` 存在并导出组件。
