@@ -18,9 +18,6 @@ export default defineConfig({
 					lang: 'en',
 				},
 			},
-			customCss: [
-				'./src/styles/custom.css'
-			],
 			sidebar: [
 				{
 					label: 'Start Here',
