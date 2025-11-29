@@ -7,26 +7,29 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'cliQ Docs',
-			defaultLocale: 'root',
+			defaultLocale: 'zh-CN',
 			locales: {
-				root: {
-					label: 'English',
-					lang: 'en',
-				},
 				'zh-CN': {
 					label: '简体中文',
 					lang: 'zh-CN',
 				},
+				en: {
+					label: 'English',
+					lang: 'en',
+				},
 			},
+			customCss: [
+				'./src/styles/custom.css'
+			],
 			sidebar: [
 				{
 					label: 'Start Here',
 					translations: {
 						'zh-CN': '开始'
 					},
-					items: [
-						{ label: 'Introduction', slug: 'intro', translations: { 'zh-CN': '介绍' } },
-					],
+					autogenerate: {
+						directory: 'start'
+					}
 				},
 				{
 					label: 'Guides',

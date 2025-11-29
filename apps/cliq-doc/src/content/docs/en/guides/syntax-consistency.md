@@ -1,5 +1,5 @@
 ---
-title: 语法一致性 (English)
+title: Syntax Consistency
 description: CLIQfile Syntax Consistency Guide
 ---
 
