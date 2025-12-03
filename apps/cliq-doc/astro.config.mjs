@@ -10,35 +10,35 @@ export default defineConfig({
 			defaultLocale: 'root',
 			locales: {
 				root: {
-					label: 'English',
-					lang: 'en',
-				},
-				'zh-CN': {
 					label: '简体中文',
 					lang: 'zh-CN',
+				},
+				en: {
+					label: 'English',
+					lang: 'en',
 				},
 			},
 			sidebar: [
 				{
-					label: 'Start Here',
+					label: '开始',
 					translations: {
-						'zh-CN': '开始'
+						'en': 'Start Here'
 					},
 					items: [
-						{ label: 'Introduction', slug: 'intro', translations: { 'zh-CN': '介绍' } },
+						{ label: '介绍', slug: 'intro', translations: { 'en': 'Introduction' } },
 					],
 				},
 				{
-					label: 'Guides',
+					label: '指南',
 					translations: {
-						'zh-CN': '指南'
+						'en': 'Guides'
 					},
 					autogenerate: { directory: 'guides' },
 				},
 				{
-					label: 'Reference',
+					label: '参考',
 					translations: {
-						'zh-CN': '参考'
+						'en': 'Reference'
 					},
 					autogenerate: { directory: 'reference' },
 				},
