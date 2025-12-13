@@ -52,13 +52,13 @@ func TestValidateRoot(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name: "Empty document",
-			yaml: "",
+			name:          "Empty document",
+			yaml:          "",
 			expectedError: "Empty document",
 		},
 		{
-			name: "Root not a mapping",
-			yaml: "- item1",
+			name:          "Root not a mapping",
+			yaml:          "- item1",
 			expectedError: "Root must be a mapping (object)",
 		},
 		{
@@ -326,7 +326,7 @@ cmds:
 }
 
 func TestValidateVariableUsage(t *testing.T) {
-    yamlStr := `
+	yamlStr := `
 name: Test
 description: Test
 version: 1.0
@@ -341,28 +341,28 @@ cmds:
         type: string
         label: Defined
 `
-    errors, err := Validate([]byte(yamlStr))
-    if err != nil {
-        t.Fatalf("Unexpected error: %v", err)
-    }
-    foundUnused := false
-    foundUndefined := false
+	errors, err := Validate([]byte(yamlStr))
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	foundUnused := false
+	foundUndefined := false
 
-    for _, e := range errors {
-        if e.Field == "command" && e.Message == "Variable 'unused_var' used in command string but not defined in variables" {
-            foundUndefined = true
-        }
-        if e.Field == "variables" && e.Message == "Variable 'defined_var' defined but not used in command string" {
-            foundUnused = true
-        }
-    }
+	for _, e := range errors {
+		if e.Field == "command" && e.Message == "Variable 'unused_var' used in command string but not defined in variables" {
+			foundUndefined = true
+		}
+		if e.Field == "variables" && e.Message == "Variable 'defined_var' defined but not used in command string" {
+			foundUnused = true
+		}
+	}
 
-    if !foundUndefined {
-        t.Error("Expected error about undefined variable usage")
-    }
-    if !foundUnused {
-        t.Error("Expected error about unused variable definition")
-    }
+	if !foundUndefined {
+		t.Error("Expected error about undefined variable usage")
+	}
+	if !foundUnused {
+		t.Error("Expected error about unused variable definition")
+	}
 }
 
 func TestValidateNoVariables(t *testing.T) {
@@ -385,8 +385,8 @@ cmds:
 		t.Errorf("Expected no errors, got %v", errors)
 	}
 
-    // Also test with variables: []
-    validYAML2 := `
+	// Also test with variables: []
+	validYAML2 := `
 name: My Template
 description: A description
 version: 1.0
