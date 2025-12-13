@@ -1,0 +1,11 @@
+version = 1
+
+[[analyzers]]
+name = "go"
+
+  [analyzers.meta]
+  import_root = "github.com/Colin-XKL/cliQ"
+  dependencies_vendored = true
+
+[[code_formatters]]
+name = "gofmt"
